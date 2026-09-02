@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Calculateur de dons — combien donner pour un coût net donné, en particulier ou en mécénat.">
+  <meta name="description" content="Calculateur de dons — don personnel ou don par une entreprise (mécénat d'entreprise).">
   <title>Calculateur de dons</title>
   <style>
     *,
@@ -383,12 +383,12 @@
       <h1>Calculateur de dons</h1>
     </header>
 
-    <nav class="tabs" role="tablist" aria-label="Type de don">
+    <nav class="tabs" role="tablist" aria-label="Type de don : personnel ou entreprise">
       <button type="button" class="tab active" role="tab" aria-selected="true" aria-controls="panel-particulier" id="tab-particulier" data-tab="particulier">
-        Particulier
+        Don personnel
       </button>
       <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="panel-mecenat" id="tab-mecenat" data-tab="mecenat">
-        Mécénat
+        Mécénat d'entreprise
       </button>
     </nav>
 
@@ -427,7 +427,7 @@
 
       <section id="panel-mecenat" class="panel" role="tabpanel" aria-labelledby="tab-mecenat" hidden>
         <div class="card">
-          <div class="mode-tabs" role="tablist" aria-label="Mode de calcul mécénat">
+          <div class="mode-tabs" role="tablist" aria-label="Mode de calcul — don de l'entreprise">
             <button type="button" class="mode-tab active" data-mode="poche" data-panel="mecenat">De ma poche</button>
             <button type="button" class="mode-tab" data-mode="don" data-panel="mecenat">Montant du don</button>
           </div>
@@ -442,7 +442,7 @@
           </label>
 
           <label class="field" for="mecenat-ca">
-            <span class="field-label">Chiffre d'affaires HT <span class="optional">(pour le plafond mécénat)</span></span>
+            <span class="field-label">Chiffre d'affaires HT de l'entreprise <span class="optional">(plafond du don)</span></span>
             <div class="input-wrap">
               <input type="number" id="mecenat-ca" min="0" step="10000" placeholder="50 000" inputmode="decimal">
               <span class="input-suffix">€</span>
@@ -486,12 +486,12 @@
       },
       mecenat: {
         poche: {
-          label: 'Combien voulez-vous sortir de votre poche ?',
-          hint: 'Net après PFU — ce que vous auriez touché en dividendes à la place du don',
+          label: 'Combien voulez-vous que ce don vous coûte personnellement ?',
+          hint: 'L\'entreprise verse le don ; équivalent net pour vous (après PFU sur dividendes)',
           placeholder: '100 €',
         },
         don: {
-          label: 'Quel montant la société veut-elle donner ?',
+          label: 'Quel montant l\'entreprise veut-elle donner ?',
           hint: null,
           placeholder: '100 €',
         },
@@ -607,7 +607,7 @@
         plafondAtteint = true;
         montantDon = dividendesBruts + plafond * TAUX_REDUCTION_IS;
         messagePlafond =
-          `Seuls ${formatEuro(plafond)} de ce don ouvrent droit à la réduction cette année ` +
+          `Seuls ${formatEuro(plafond)} du don de l'entreprise ouvrent droit à la réduction cette année ` +
           `(max(20 000 €, 0,5 % du CA HT)). L'excédent est reportable sur 5 ans.`;
       }
 
@@ -642,7 +642,7 @@
         plafondAtteint = true;
         reductionFiscale = plafond * TAUX_REDUCTION_IS;
         messagePlafond =
-          `Seuls ${formatEuro(plafond)} de ce don ouvrent droit à la réduction cette année ` +
+          `Seuls ${formatEuro(plafond)} du don de l'entreprise ouvrent droit à la réduction cette année ` +
           `(max(20 000 €, 0,5 % du CA HT)). L'excédent est reportable sur 5 ans.`;
       } else {
         reductionFiscale = montantDonSaisi * TAUX_REDUCTION_IS;
@@ -739,23 +739,23 @@
       );
       const bridgeIs = flowBridgeForward(
         result.plafondAtteint
-          ? `Réduction d'IS : ${formatEuro(result.reductionFiscale)}`
-          : `La société récupère ${formatPct(TAUX_REDUCTION_IS)} en réduction d'IS`
+          ? `Réduction d'IS pour l'entreprise : ${formatEuro(result.reductionFiscale)}`
+          : `L'entreprise récupère ${formatPct(TAUX_REDUCTION_IS)} en réduction d'IS`
       );
       const stepPoche = flowStep(
         'Votre poche',
         formatEuro(result.coutPoche),
-        'Net après réduction d\'impôt et PFU — ce que ça vous coûte réellement',
+        'Net après réduction d\'impôt et PFU — ce que ce don vous coûte réellement',
         mode === 'poche' ? 'input' : 'result'
       );
       const stepDiv = flowStep(
-        'Dividendes bruts équivalents',
+        'Équivalent dividendes',
         formatEuro(result.coutSociete),
-        'Ce que la société aurait pu vous verser',
+        'Ce que l\'entreprise aurait pu vous verser à la place du don',
         'middle'
       );
       const stepDon = flowStep(
-        'Don mécénat',
+        'Don de l\'entreprise',
         formatEuro(result.montantDon),
         '',
         mode === 'don' ? 'input' : 'result'
