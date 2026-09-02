@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Calculateur de dons — combien donner pour un coût net donné, en particulier ou en mécénat.">
+  <title>Calculateur de dons</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #0a1f14;
+      --bg-card: #122a1c;
+      --green-bright: #00c853;
+      --green-mid: #4caf50;
+      --green-soft: #a5d6a7;
+      --text-primary: #e8f5e9;
+      --text-muted: #81c784;
+      --border: rgba(0, 200, 83, 0.25);
+      --border-strong: rgba(0, 200, 83, 0.5);
+      --alert-bg: rgba(255, 193, 7, 0.12);
+      --alert-text: #ffe082;
+      --radius: 12px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    html {
+      font-size: 16px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(0, 200, 83, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(76, 175, 80, 0.08) 0%, transparent 50%),
+        var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0.25rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1.25rem;
+      padding: 0.2rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .mode-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .mode-tab.active {
+      color: var(--bg-dark);
+      background: var(--green-mid);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-radius: calc(var(--radius) - 4px);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+      background: rgba(0, 200, 83, 0.08);
+    }
+
+    .tab.active {
+      color: var(--bg-dark);
+      background: var(--green-bright);
+    }
+
+    .tab:focus-visible {
+      outline: 2px solid var(--green-bright);
+      outline-offset: 2px;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .card {
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .field {
+      display: block;
+      margin-bottom: 1.25rem;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .optional {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .field-hint {
+      display: block;
+      margin: -0.25rem 0 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--green-bright);
+    }
+
+    .input-wrap input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      outline: none;
+      min-width: 0;
+    }
+
+    .input-wrap input::placeholder {
+      color: rgba(165, 214, 167, 0.4);
+    }
+
+    .input-suffix {
+      padding: 0 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--green-mid);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .field select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .field select:focus {
+      border-color: var(--green-bright);
+    }
+
+    .results {
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .flow-step {
+      padding: 1rem 1.25rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .flow-step--result {
+      background: rgba(0, 200, 83, 0.12);
+      border-color: var(--border-strong);
+      text-align: center;
+      padding: 1.25rem;
+    }
+
+    .flow-step--input {
+      border-color: rgba(0, 200, 83, 0.35);
+    }
+
+    .flow-step--middle {
+      border-style: dashed;
+    }
+
+    .flow-step-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+    }
+
+    .flow-step--result .flow-step-label {
+      color: var(--green-mid);
+    }
+
+    .flow-step-value {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .flow-step--result .flow-step-value {
+      font-size: clamp(1.75rem, 6vw, 2.25rem);
+      color: var(--green-bright);
+    }
+
+    .flow-step-note {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .flow-bridge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.5rem 0;
+      color: var(--text-muted);
+    }
+
+    .flow-bridge-line {
+      width: 2px;
+      height: 12px;
+      background: var(--border-strong);
+    }
+
+    .flow-bridge-op {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 0.35rem 0.75rem;
+      background: rgba(0, 200, 83, 0.06);
+      border: 1px dashed var(--border);
+      border-radius: 999px;
+      color: var(--green-soft);
+      max-width: 100%;
+    }
+
+    .flow-empty {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .alert {
+      margin: 1rem 0 0;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      color: var(--alert-text);
+      background: var(--alert-bg);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      border-radius: 8px;
+    }
+
+    .alert.hidden {
+      display: none;
+    }
+
+    .footer {
+      margin-top: 2.5rem;
+      text-align: center;
+    }
+
+    .disclaimer {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem 1rem 2.5rem;
+      }
+
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Calculateur de dons</h1>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Type de don">
+      <button type="button" class="tab active" role="tab" aria-selected="true" aria-controls="panel-particulier" id="tab-particulier" data-tab="particulier">
+        Particulier
+      </button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="panel-mecenat" id="tab-mecenat" data-tab="mecenat">
+        Mécénat
+      </button>
+    </nav>
+
+    <main>
+      <section id="panel-particulier" class="panel active" role="tabpanel" aria-labelledby="tab-particulier">
+        <div class="card">
+          <div class="mode-tabs" role="tablist" aria-label="Mode de calcul particulier">
+            <button type="button" class="mode-tab active" data-mode="poche" data-panel="particulier">De ma poche</button>
+            <button type="button" class="mode-tab" data-mode="don" data-panel="particulier">Montant du don</button>
+          </div>
+
+          <label class="field" for="particulier-montant">
+            <span class="field-label" id="particulier-montant-label">Combien voulez-vous sortir de votre poche ?</span>
+            <div class="input-wrap">
+              <input type="number" id="particulier-montant" min="0" step="1" placeholder="50 €" inputmode="decimal">
+              <span class="input-suffix">€</span>
+            </div>
+          </label>
+
+          <label class="field" for="particulier-revenu">
+            <span class="field-label">Revenu imposable annuel <span class="optional">(optionnel, pour le plafond)</span></span>
+            <div class="input-wrap">
+              <input type="number" id="particulier-revenu" min="0" step="1000" placeholder="25 000" inputmode="decimal">
+              <span class="input-suffix">€</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="results" id="particulier-results" aria-live="polite">
+          <div class="flow" id="particulier-flow">
+            <div class="flow-empty">Saisissez un montant pour voir le calcul</div>
+          </div>
+          <p class="alert hidden" id="particulier-alert" role="status"></p>
+        </div>
+      </section>
+
+      <section id="panel-mecenat" class="panel" role="tabpanel" aria-labelledby="tab-mecenat" hidden>
+        <div class="card">
+          <div class="mode-tabs" role="tablist" aria-label="Mode de calcul mécénat">
+            <button type="button" class="mode-tab active" data-mode="poche" data-panel="mecenat">De ma poche</button>
+            <button type="button" class="mode-tab" data-mode="don" data-panel="mecenat">Montant du don</button>
+          </div>
+
+          <label class="field" for="mecenat-montant">
+            <span class="field-label" id="mecenat-montant-label">Combien voulez-vous sortir de votre poche ?</span>
+            <span class="field-hint" id="mecenat-montant-hint" hidden></span>
+            <div class="input-wrap">
+              <input type="number" id="mecenat-montant" min="0" step="1" placeholder="100 €" inputmode="decimal">
+              <span class="input-suffix">€</span>
+            </div>
+          </label>
+
+          <label class="field" for="mecenat-ca">
+            <span class="field-label">Chiffre d'affaires HT <span class="optional">(pour le plafond mécénat)</span></span>
+            <div class="input-wrap">
+              <input type="number" id="mecenat-ca" min="0" step="10000" placeholder="50 000" inputmode="decimal">
+              <span class="input-suffix">€</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="results" id="mecenat-results" aria-live="polite">
+          <div class="flow" id="mecenat-flow">
+            <div class="flow-empty">Saisissez un montant pour voir le calcul</div>
+          </div>
+          <p class="alert hidden" id="mecenat-alert" role="status"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p class="disclaimer">
+        Outil indicatif, ne constitue pas un conseil fiscal. Vérifiez avec votre expert-comptable.
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    'use strict';
+
+    const TAUX_REDUCTION_IR = 0.66;
+    const TAUX_REDUCTION_IS = 0.60;
+    const TAUX_PFU = 0.314;
+    const PLAFOND_IR_REVENU = 0.20;
+    const PLAFOND_MECENAT_MIN = 20000;
+    const PLAFOND_MECENAT_CA = 0.005;
+
+    const modeParticulier = { current: 'poche' };
+    const modeMecenat = { current: 'poche' };
+
+    const LABELS = {
+      particulier: {
+        poche: { label: 'Combien voulez-vous sortir de votre poche ?', placeholder: '50 €' },
+        don: { label: 'Quel montant souhaitez-vous donner ?', placeholder: '50 €' },
+      },
+      mecenat: {
+        poche: {
+          label: 'Combien voulez-vous sortir de votre poche ?',
+          hint: 'Net après PFU — ce que vous auriez touché en dividendes à la place du don',
+          placeholder: '100 €',
+        },
+        don: {
+          label: 'Quel montant la société veut-elle donner ?',
+          hint: null,
+          placeholder: '100 €',
+        },
+      },
+    };
+
+    function formatEuro(amount) {
+      if (amount == null || Number.isNaN(amount)) return '—';
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    }
+
+    function parseInput(value) {
+      if (value === '' || value == null) return null;
+      const n = Number(value);
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    }
+
+    function calculParticulierFromPoche(coutNetSouhaite, revenuImposable) {
+      if (coutNetSouhaite == null || coutNetSouhaite <= 0) {
+        return null;
+      }
+
+      const tauxNet = 1 - TAUX_REDUCTION_IR;
+      let montantDon = coutNetSouhaite / tauxNet;
+      let reductionFiscale = montantDon * TAUX_REDUCTION_IR;
+      let plafondAtteint = false;
+      let messagePlafond = null;
+
+      if (revenuImposable != null && revenuImposable > 0) {
+        const plafondDon = revenuImposable * PLAFOND_IR_REVENU;
+        if (montantDon > plafondDon) {
+          plafondAtteint = true;
+          montantDon = coutNetSouhaite + plafondDon * TAUX_REDUCTION_IR;
+          reductionFiscale = plafondDon * TAUX_REDUCTION_IR;
+          messagePlafond =
+            `Seuls ${formatEuro(plafondDon)} de ce don ouvrent droit à la réduction cette année ` +
+            `(20 % du revenu imposable). L'excédent est reportable sur 5 ans.`;
+        }
+      }
+
+      return {
+        montantDon,
+        montantRecuAssociation: montantDon,
+        reductionFiscale,
+        coutReel: montantDon - reductionFiscale,
+        plafondAtteint,
+        messagePlafond,
+      };
+    }
+
+    function calculParticulierFromDon(montantDonSaisi, revenuImposable) {
+      if (montantDonSaisi == null || montantDonSaisi <= 0) {
+        return null;
+      }
+
+      let montantDon = montantDonSaisi;
+      let reductionFiscale = montantDon * TAUX_REDUCTION_IR;
+      let plafondAtteint = false;
+      let messagePlafond = null;
+
+      if (revenuImposable != null && revenuImposable > 0) {
+        const plafondDon = revenuImposable * PLAFOND_IR_REVENU;
+        if (montantDon > plafondDon) {
+          plafondAtteint = true;
+          reductionFiscale = plafondDon * TAUX_REDUCTION_IR;
+          messagePlafond =
+            `Seuls ${formatEuro(plafondDon)} de ce don ouvrent droit à la réduction cette année ` +
+            `(20 % du revenu imposable). L'excédent est reportable sur 5 ans.`;
+        }
+      }
+
+      return {
+        montantDon,
+        montantRecuAssociation: montantDon,
+        reductionFiscale,
+        coutReel: montantDon - reductionFiscale,
+        plafondAtteint,
+        messagePlafond,
+      };
+    }
+
+    function calculDonParticulier(montant, revenuImposable, mode) {
+      if (mode === 'don') {
+        return calculParticulierFromDon(montant, revenuImposable);
+      }
+      return calculParticulierFromPoche(montant, revenuImposable);
+    }
+
+    function plafondMecenat(caHT) {
+      if (caHT == null || caHT <= 0) {
+        return PLAFOND_MECENAT_MIN;
+      }
+      return Math.max(PLAFOND_MECENAT_MIN, caHT * PLAFOND_MECENAT_CA);
+    }
+
+    function calculMecenatFromPoche(coutNetPoche, caHT) {
+      if (coutNetPoche == null || coutNetPoche <= 0) {
+        return null;
+      }
+
+      const plafond = plafondMecenat(caHT);
+      const dividendesBruts = coutNetPoche / (1 - TAUX_PFU);
+      let montantDon = dividendesBruts / (1 - TAUX_REDUCTION_IS);
+      let plafondAtteint = false;
+      let messagePlafond = null;
+
+      if (montantDon > plafond) {
+        plafondAtteint = true;
+        montantDon = dividendesBruts + plafond * TAUX_REDUCTION_IS;
+        messagePlafond =
+          `Seuls ${formatEuro(plafond)} de ce don ouvrent droit à la réduction cette année ` +
+          `(max(20 000 €, 0,5 % du CA HT)). L'excédent est reportable sur 5 ans.`;
+      }
+
+      const reductionFiscale = plafondAtteint
+        ? plafond * TAUX_REDUCTION_IS
+        : montantDon * TAUX_REDUCTION_IS;
+      const coutSociete = montantDon - reductionFiscale;
+
+      return {
+        montantDon,
+        montantRecuAssociation: montantDon,
+        reductionFiscale,
+        coutSociete,
+        coutPoche: coutSociete * (1 - TAUX_PFU),
+        plafondAtteint,
+        messagePlafond,
+        plafond,
+      };
+    }
+
+    function calculMecenatFromDon(montantDonSaisi, caHT) {
+      if (montantDonSaisi == null || montantDonSaisi <= 0) {
+        return null;
+      }
+
+      const plafond = plafondMecenat(caHT);
+      let plafondAtteint = false;
+      let messagePlafond = null;
+      let reductionFiscale;
+
+      if (montantDonSaisi > plafond) {
+        plafondAtteint = true;
+        reductionFiscale = plafond * TAUX_REDUCTION_IS;
+        messagePlafond =
+          `Seuls ${formatEuro(plafond)} de ce don ouvrent droit à la réduction cette année ` +
+          `(max(20 000 €, 0,5 % du CA HT)). L'excédent est reportable sur 5 ans.`;
+      } else {
+        reductionFiscale = montantDonSaisi * TAUX_REDUCTION_IS;
+      }
+
+      const coutSociete = montantDonSaisi - reductionFiscale;
+
+      return {
+        montantDon: montantDonSaisi,
+        montantRecuAssociation: montantDonSaisi,
+        reductionFiscale,
+        coutSociete,
+        coutPoche: coutSociete * (1 - TAUX_PFU),
+        plafondAtteint,
+        messagePlafond,
+        plafond,
+      };
+    }
+
+    function calculMecenat(montant, caHT, mode) {
+      if (mode === 'don') {
+        return calculMecenatFromDon(montant, caHT);
+      }
+      return calculMecenatFromPoche(montant, caHT);
+    }
+
+    function formatPct(rate) {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'percent',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1,
+      }).format(rate);
+    }
+
+    function flowBridgeForward(op) {
+      return `
+        <div class="flow-bridge">
+          <div class="flow-bridge-line"></div>
+          <span class="flow-bridge-op">${op}</span>
+          <div class="flow-bridge-line"></div>
+        </div>`;
+    }
+
+    function flowStep(label, value, note, variant) {
+      return `
+        <div class="flow-step flow-step--${variant}">
+          <span class="flow-step-label">${label}</span>
+          <span class="flow-step-value">${value}</span>
+          ${note ? `<span class="flow-step-note">${note}</span>` : ''}
+        </div>`;
+    }
+
+    function renderParticulierFlow(result, mode) {
+      const container = document.getElementById('particulier-flow');
+      if (!result) {
+        container.innerHTML = '<div class="flow-empty">Saisissez un montant pour voir le calcul</div>';
+        return;
+      }
+
+      const bridge = flowBridgeForward(
+        result.plafondAtteint
+          ? `Réduction d'impôt : ${formatEuro(result.reductionFiscale)}`
+          : `Réduction d'impôt de ${formatPct(TAUX_REDUCTION_IR)}`
+      );
+      const stepPoche = flowStep(
+        'Votre poche',
+        formatEuro(result.coutReel),
+        'Ce que ça vous coûte réellement',
+        mode === 'poche' ? 'input' : 'result'
+      );
+      const stepDon = flowStep(
+        'Don à effectuer',
+        formatEuro(result.montantDon),
+        '',
+        mode === 'don' ? 'input' : 'result'
+      );
+
+      container.innerHTML = mode === 'poche'
+        ? [stepDon, bridge, stepPoche].join('')
+        : [stepPoche, bridge, stepDon].join('');
+    }
+
+    function renderMecenatFlow(result, mode) {
+      const container = document.getElementById('mecenat-flow');
+      if (!result) {
+        container.innerHTML = '<div class="flow-empty">Saisissez un montant pour voir le calcul</div>';
+        return;
+      }
+
+      const bridgePfu = flowBridgeForward(
+        mode === 'poche'
+          ? `PFU de ${formatPct(TAUX_PFU)}`
+          : `Équivalent brut avant PFU (${formatPct(TAUX_PFU)})`
+      );
+      const bridgeIs = flowBridgeForward(
+        result.plafondAtteint
+          ? `Réduction d'IS : ${formatEuro(result.reductionFiscale)}`
+          : `La société récupère ${formatPct(TAUX_REDUCTION_IS)} en réduction d'IS`
+      );
+      const stepPoche = flowStep(
+        'Votre poche',
+        formatEuro(result.coutPoche),
+        'Net après PFU sur dividendes équivalents',
+        mode === 'poche' ? 'input' : 'result'
+      );
+      const stepDiv = flowStep(
+        'Dividendes bruts équivalents',
+        formatEuro(result.coutSociete),
+        'Ce que la société aurait pu vous verser',
+        'middle'
+      );
+      const stepDon = flowStep(
+        'Don mécénat',
+        formatEuro(result.montantDon),
+        '',
+        mode === 'don' ? 'input' : 'result'
+      );
+
+      container.innerHTML = mode === 'poche'
+        ? [stepDon, bridgeIs, stepDiv, bridgePfu, stepPoche].join('')
+        : [stepPoche, bridgePfu, stepDiv, bridgeIs, stepDon].join('');
+    }
+
+    function updateModeLabels(panel, mode) {
+      const labels = LABELS[panel][mode];
+      const labelEl = document.getElementById(`${panel}-montant-label`);
+      const inputEl = document.getElementById(`${panel}-montant`);
+      labelEl.textContent = labels.label;
+      inputEl.placeholder = labels.placeholder;
+
+      const hintEl = document.getElementById(`${panel}-montant-hint`);
+      if (hintEl) {
+        if (labels.hint) {
+          hintEl.textContent = labels.hint;
+          hintEl.hidden = false;
+        } else {
+          hintEl.textContent = '';
+          hintEl.hidden = true;
+        }
+      }
+    }
+
+    function setMode(panel, mode) {
+      const state = panel === 'particulier' ? modeParticulier : modeMecenat;
+      state.current = mode;
+
+      document.querySelectorAll(`.mode-tab[data-panel="${panel}"]`).forEach((btn) => {
+        const isActive = btn.dataset.mode === mode;
+        btn.classList.toggle('active', isActive);
+      });
+
+      updateModeLabels(panel, mode);
+      document.getElementById(`${panel}-montant`).value = '';
+
+      if (panel === 'particulier') {
+        updateParticulier();
+      } else {
+        updateMecenat();
+      }
+    }
+
+    function setAlert(id, message) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (message) {
+        el.textContent = message;
+        el.classList.remove('hidden');
+      } else {
+        el.textContent = '';
+        el.classList.add('hidden');
+      }
+    }
+
+    function updateParticulier() {
+      const montant = parseInput(document.getElementById('particulier-montant').value);
+      const revenu = parseInput(document.getElementById('particulier-revenu').value);
+      const result = calculDonParticulier(montant, revenu, modeParticulier.current);
+
+      renderParticulierFlow(result, modeParticulier.current);
+      setAlert('particulier-alert', result ? result.messagePlafond : null);
+    }
+
+    function updateMecenat() {
+      const montant = parseInput(document.getElementById('mecenat-montant').value);
+      const caHT = parseInput(document.getElementById('mecenat-ca').value);
+      const result = calculMecenat(montant, caHT, modeMecenat.current);
+
+      renderMecenatFlow(result, modeMecenat.current);
+      setAlert('mecenat-alert', result ? result.messagePlafond : null);
+    }
+
+    function initTabs() {
+      const tabs = document.querySelectorAll('.tab');
+      const panels = document.querySelectorAll('.panel');
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const target = tab.dataset.tab;
+
+          tabs.forEach((t) => {
+            const isActive = t === tab;
+            t.classList.toggle('active', isActive);
+            t.setAttribute('aria-selected', String(isActive));
+          });
+
+          panels.forEach((panel) => {
+            const isActive = panel.id === `panel-${target}`;
+            panel.classList.toggle('active', isActive);
+            panel.hidden = !isActive;
+          });
+        });
+      });
+    }
+
+    function initModeToggles() {
+      document.querySelectorAll('.mode-tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          setMode(btn.dataset.panel, btn.dataset.mode);
+        });
+      });
+    }
+
+    function initInputs() {
+      ['particulier-montant', 'particulier-revenu'].forEach((id) => {
+        document.getElementById(id).addEventListener('input', updateParticulier);
+      });
+
+      ['mecenat-montant', 'mecenat-ca'].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', updateMecenat);
+        el.addEventListener('change', updateMecenat);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTabs();
+      initModeToggles();
+      initInputs();
+      updateModeLabels('particulier', modeParticulier.current);
+      updateModeLabels('mecenat', modeMecenat.current);
+      updateParticulier();
+      updateMecenat();
+    });
+  </script>
+</body>
+</html>
