@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Calculateur de dons — don personnel ou don par une entreprise (mécénat d'entreprise).">
+  <meta name="description" content="Calculateur de dons — don personnel (IR ou IFI) ou don par une entreprise (mécénat).">
   <title>Calculateur de dons</title>
   <style>
     *,
@@ -158,6 +158,10 @@
       margin-bottom: 0;
     }
 
+    .field.hidden {
+      display: none;
+    }
+
     .field-label {
       display: block;
       margin-bottom: 0.5rem;
@@ -176,6 +180,35 @@
       display: block;
       margin: -0.25rem 0 0.5rem;
       font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .field-checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      margin-bottom: 1.25rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .field-checkbox input[type="checkbox"] {
+      width: 1.1rem;
+      height: 1.1rem;
+      margin-top: 0.15rem;
+      accent-color: var(--green-bright);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .field-checkbox-hint {
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.8rem;
+      font-weight: 400;
       color: var(--text-muted);
       line-height: 1.4;
     }
@@ -207,6 +240,18 @@
 
     .input-wrap input::placeholder {
       color: rgba(165, 214, 167, 0.4);
+    }
+
+    /* Masque les flèches natives des champs number (non stylisables de façon fiable) */
+    .input-wrap input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .input-wrap input[type="number"]::-webkit-outer-spin-button,
+    .input-wrap input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     .input-suffix {
@@ -274,6 +319,18 @@
       border-style: dashed;
     }
 
+    .flow-step--excess {
+      border-style: dashed;
+      border-color: rgba(255, 193, 7, 0.45);
+      background: var(--alert-bg);
+    }
+
+    .flow-step--excess .flow-step-label,
+    .flow-step--excess .flow-step-value,
+    .flow-step--excess .flow-step-note {
+      color: var(--alert-text);
+    }
+
     .flow-step-label {
       display: block;
       font-size: 0.8rem;
@@ -308,6 +365,26 @@
       color: var(--text-muted);
     }
 
+    .flow-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0 0.25rem;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .flow-divider::before,
+    .flow-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
     .flow-bridge {
       display: flex;
       flex-direction: column;
@@ -332,6 +409,14 @@
       border-radius: 999px;
       color: var(--green-soft);
       max-width: 100%;
+    }
+
+    .flow-bridge--line-only {
+      padding: 0.35rem 0;
+    }
+
+    .flow-bridge--line-only .flow-bridge-line {
+      height: 16px;
     }
 
     .flow-empty {
@@ -401,17 +486,30 @@
           </div>
 
           <label class="field" for="particulier-montant">
-            <span class="field-label" id="particulier-montant-label">Combien voulez-vous sortir de votre poche ?</span>
+            <span class="field-label" id="particulier-montant-label">Combien voulez-vous mettre de votre poche ?</span>
             <div class="input-wrap">
               <input type="number" id="particulier-montant" min="0" step="1" placeholder="50 €" inputmode="decimal">
               <span class="input-suffix">€</span>
             </div>
           </label>
 
-          <label class="field" for="particulier-revenu">
-            <span class="field-label">Revenu imposable annuel <span class="optional">(optionnel, pour le plafond)</span></span>
+          <label class="field-checkbox" for="particulier-redevable-ifi">
+            <input type="checkbox" id="particulier-redevable-ifi">
+            <span>Je suis redevable de l'IFI</span>
+          </label>
+
+          <label class="field" for="particulier-revenu" id="particulier-revenu-field">
+            <span class="field-label" id="particulier-revenu-label">Revenu imposable annuel <span class="optional">(optionnel, pour le plafond)</span></span>
             <div class="input-wrap">
               <input type="number" id="particulier-revenu" min="0" step="1000" placeholder="25 000" inputmode="decimal">
+              <span class="input-suffix">€</span>
+            </div>
+          </label>
+
+          <label class="field hidden" for="particulier-ifi" id="particulier-ifi-field">
+            <span class="field-label">IFI dû <span class="optional">(optionnel, plafond IFI)</span></span>
+            <div class="input-wrap">
+              <input type="number" id="particulier-ifi" min="0" step="1000" placeholder="1 000" inputmode="decimal">
               <span class="input-suffix">€</span>
             </div>
           </label>
@@ -433,7 +531,7 @@
           </div>
 
           <label class="field" for="mecenat-montant">
-            <span class="field-label" id="mecenat-montant-label">Combien voulez-vous sortir de votre poche ?</span>
+            <span class="field-label" id="mecenat-montant-label">Combien voulez-vous mettre de votre poche ?</span>
             <span class="field-hint" id="mecenat-montant-hint" hidden></span>
             <div class="input-wrap">
               <input type="number" id="mecenat-montant" min="0" step="1" placeholder="100 €" inputmode="decimal">
@@ -470,18 +568,24 @@
     'use strict';
 
     const TAUX_REDUCTION_IR = 0.66;
+    const TAUX_REDUCTION_IFI = 0.75;
     const TAUX_REDUCTION_IS = 0.60;
     const TAUX_PFU = 0.314;
     const PLAFOND_IR_REVENU = 0.20;
+    const PLAFOND_IFI_REDUCTION = 50000;
+    const PLAFOND_IFI_DON = PLAFOND_IFI_REDUCTION / TAUX_REDUCTION_IFI;
     const PLAFOND_MECENAT_MIN = 20000;
     const PLAFOND_MECENAT_CA = 0.005;
+
+    // Tolérance en euros pour les comparaisons de plafonds.
+    const EPS = 0.005;
 
     const modeParticulier = { current: 'poche' };
     const modeMecenat = { current: 'poche' };
 
     const LABELS = {
       particulier: {
-        poche: { label: 'Combien voulez-vous sortir de votre poche ?', placeholder: '50 €' },
+        poche: { label: 'Combien voulez-vous mettre de votre poche ?', placeholder: '50 €' },
         don: { label: 'Quel montant souhaitez-vous donner ?', placeholder: '50 €' },
       },
       mecenat: {
@@ -514,159 +618,247 @@
       return Number.isFinite(n) && n >= 0 ? n : null;
     }
 
-    function calculParticulierFromPoche(coutNetSouhaite, revenuImposable) {
-      if (coutNetSouhaite == null || coutNetSouhaite <= 0) {
+    /*
+     * Moteur de calcul.
+     *
+     * Tout repose sur une seule abstraction, le « dispositif » : un taux de
+     * réduction et l'assiette maximale de don qui y ouvre droit. Au-delà de
+     * cette assiette, l'euro donné n'est plus réduit (reportable sur 5 ans
+     * pour l'IR et l'IS, définitivement perdu pour l'IFI).
+     *
+     *   - IR  (art. 200)  : 66 %, assiette plafonnée à 20 % du revenu imposable
+     *   - IFI (art. 978)  : 75 %, assiette plafonnée à 66 667 € (réduction max.
+     *                       50 000 €) et à l'IFI réellement dû
+     *   - IS  (mécénat)   : 60 %, assiette plafonnée à max(20 000 €, 0,5 % CA HT)
+     */
+
+    function dispositifIr(revenuImposable) {
+      // Champ vide : plafond IR inconnu. Zéro explicite : aucune réduction IR possible.
+      const assietteMax = revenuImposable == null
+        ? Infinity
+        : revenuImposable * PLAFOND_IR_REVENU;
+      return { id: 'ir', taux: TAUX_REDUCTION_IR, assietteMax };
+    }
+
+    function dispositifIfi(ifiDu) {
+      // Champ vide : seul le plafond légal s'applique. Zéro explicite : pas d'IFI dû.
+      const assietteIfiDu = ifiDu == null ? Infinity : ifiDu / TAUX_REDUCTION_IFI;
+      const assietteMax = Math.min(PLAFOND_IFI_DON, assietteIfiDu);
+      return {
+        id: 'ifi',
+        taux: TAUX_REDUCTION_IFI,
+        assietteMax,
+        motif: ifiDu != null && assietteIfiDu < PLAFOND_IFI_DON - EPS ? 'ifiDu' : 'plafond',
+        ifiDu,
+      };
+    }
+
+    function dispositifIs(caHT) {
+      const assietteMax = caHT != null && caHT > 0
+        ? Math.max(PLAFOND_MECENAT_MIN, caHT * PLAFOND_MECENAT_CA)
+        : PLAFOND_MECENAT_MIN;
+      return { id: 'is', taux: TAUX_REDUCTION_IS, assietteMax };
+    }
+
+    function reductionPour(dispositif, don) {
+      return Math.min(don, dispositif.assietteMax) * dispositif.taux;
+    }
+
+    // Coût net d'un don qui sature exactement l'assiette du dispositif.
+    function coutNetAssietteMax(dispositif) {
+      return dispositif.assietteMax * (1 - dispositif.taux);
+    }
+
+    // Une assiette est « saturée » soit parce que le don la dépasse, soit parce
+    // qu'elle a forcé le report du reliquat sur un dispositif moins avantageux.
+    function marquerSaturation(parts) {
+      parts.forEach((part, index) => {
+        if (!Number.isFinite(part.dispositif.assietteMax)) {
+          part.assietteSaturee = false;
+          return;
+        }
+        const reliquatReporte = parts.slice(index + 1).some((autre) => autre.don > EPS);
+        part.assietteSaturee =
+          part.don > part.dispositif.assietteMax + EPS ||
+          (reliquatReporte && part.don >= part.dispositif.assietteMax - EPS);
+      });
+      return parts;
+    }
+
+    // Répartit un don connu entre les dispositifs, du plus avantageux au moins
+    // avantageux. Le dernier absorbe l'excédent, réduit ou non.
+    function repartirDepuisDon(dispositifs, montantDon) {
+      let reste = montantDon;
+      const parts = dispositifs.map((dispositif, index) => {
+        const dernier = index === dispositifs.length - 1;
+        const don = dernier ? reste : Math.min(reste, dispositif.assietteMax);
+        reste -= don;
+        return { dispositif, don, reduction: reductionPour(dispositif, don) };
+      });
+      return marquerSaturation(parts);
+    }
+
+    // Remonte du coût net souhaité vers le don, en saturant chaque dispositif
+    // avant de passer au suivant.
+    function repartirDepuisPoche(dispositifs, coutNetSouhaite) {
+      let reste = coutNetSouhaite;
+      const parts = dispositifs.map((dispositif, index) => {
+        const dernier = index === dispositifs.length - 1;
+        const coutSature = coutNetAssietteMax(dispositif);
+        let don;
+
+        if (reste <= EPS) {
+          don = 0;
+        } else if (reste <= coutSature + EPS) {
+          don = reste / (1 - dispositif.taux);
+          reste = 0;
+        } else if (dernier) {
+          // Au-delà de l'assiette, chaque euro donné coûte un euro.
+          don = dispositif.assietteMax + (reste - coutSature);
+          reste = 0;
+        } else {
+          don = dispositif.assietteMax;
+          reste -= coutSature;
+        }
+
+        return { dispositif, don, reduction: reductionPour(dispositif, don) };
+      });
+      return marquerSaturation(parts);
+    }
+
+    function messagePourPart(part) {
+      if (!part.assietteSaturee) {
         return null;
       }
 
-      const tauxNet = 1 - TAUX_REDUCTION_IR;
-      let montantDon = coutNetSouhaite / tauxNet;
-      let reductionFiscale = montantDon * TAUX_REDUCTION_IR;
-      let plafondAtteint = false;
-      let messagePlafond = null;
+      const { dispositif } = part;
 
-      if (revenuImposable != null && revenuImposable > 0) {
-        const plafondDon = revenuImposable * PLAFOND_IR_REVENU;
-        if (montantDon > plafondDon) {
-          plafondAtteint = true;
-          montantDon = coutNetSouhaite + plafondDon * TAUX_REDUCTION_IR;
-          reductionFiscale = plafondDon * TAUX_REDUCTION_IR;
-          messagePlafond =
-            `Seuls ${formatEuro(plafondDon)} de ce don ouvrent droit à la réduction cette année ` +
-            `(20 % du revenu imposable). L'excédent est reportable sur 5 ans.`;
-        }
+      if (dispositif.id === 'ifi' && dispositif.motif === 'ifiDu') {
+        return `Votre IFI dû (${formatEuro(dispositif.ifiDu)}) limite la réduction IFI. ` +
+          `Le reliquat du don est imputé sur l'IR (${formatPct(TAUX_REDUCTION_IR)}) ; ` +
+          `un excédent d'IFI ne serait pas reportable.`;
       }
 
+      if (dispositif.id === 'ifi') {
+        return `Plafond IFI atteint : ${formatEuro(PLAFOND_IFI_DON)} de don au maximum ` +
+          `(réduction plafonnée à ${formatEuro(PLAFOND_IFI_REDUCTION)}). ` +
+          `Le reliquat est imputé sur l'IR (${formatPct(TAUX_REDUCTION_IR)}).`;
+      }
+
+      if (dispositif.id === 'ir') {
+        return `Seuls ${formatEuro(dispositif.assietteMax)} de don ouvrent droit à la réduction IR ` +
+          `cette année (20 % du revenu imposable). L'excédent est reportable sur 5 ans.`;
+      }
+
+      return `Seuls ${formatEuro(dispositif.assietteMax)} du don de l'entreprise ouvrent droit à la ` +
+        `réduction cette année (max(20 000 €, 0,5 % du CA HT)). L'excédent est reportable sur 5 ans.`;
+    }
+
+    function totalParts(parts, cle) {
+      return parts.reduce((total, part) => total + part[cle], 0);
+    }
+
+    // Fraction du don qui dépasse l'assiette et n'ouvre donc droit à aucune
+    // réduction cette année. Seul le dernier dispositif peut en générer, les
+    // précédents reportant leur reliquat sur le suivant.
+    function excedentPour(part) {
+      if (!Number.isFinite(part.dispositif.assietteMax)) {
+        return 0;
+      }
+      return Math.max(0, part.don - part.dispositif.assietteMax);
+    }
+
+    function assemblerResultatParticulier(parts, regime) {
+      const montantDon = totalParts(parts, 'don');
+      const reductionFiscale = totalParts(parts, 'reduction');
+      const messages = parts.map(messagePourPart).filter(Boolean);
+      const partIfi = parts.find((part) => part.dispositif.id === 'ifi');
+      const partIr = parts.find((part) => part.dispositif.id === 'ir');
+      const excedent = parts.reduce((total, part) => total + excedentPour(part), 0);
+      const assietteIr = partIr
+        ? Math.min(partIr.don, partIr.dispositif.assietteMax)
+        : 0;
+
       return {
+        regime,
         montantDon,
         montantRecuAssociation: montantDon,
         reductionFiscale,
         coutReel: montantDon - reductionFiscale,
-        plafondAtteint,
-        messagePlafond,
+        donIfi: partIfi ? partIfi.don : 0,
+        donIr: partIr ? partIr.don : 0,
+        reductionIfi: partIfi ? partIfi.reduction : 0,
+        reductionIr: partIr ? partIr.reduction : 0,
+        excedent,
+        assietteIr,
+        panachage: Boolean(partIfi && partIr && partIfi.don > EPS && partIr.don > EPS),
+        motifIfi: partIfi && partIfi.assietteSaturee ? partIfi.dispositif.motif : null,
+        plafondAtteint: messages.length > 0,
+        messagePlafond: messages.length ? messages.join(' ') : null,
       };
     }
 
-    function calculParticulierFromDon(montantDonSaisi, revenuImposable) {
-      if (montantDonSaisi == null || montantDonSaisi <= 0) {
+    function calculDonParticulier(montant, revenuImposable, ifiDu, mode, regime) {
+      if (montant == null || montant <= 0) {
         return null;
       }
 
-      let montantDon = montantDonSaisi;
-      let reductionFiscale = montantDon * TAUX_REDUCTION_IR;
-      let plafondAtteint = false;
-      let messagePlafond = null;
+      // Ordre décroissant de taux : on sature l'IFI (75 %) avant l'IR (66 %).
+      const dispositifs = regime === 'ifi'
+        ? [dispositifIfi(ifiDu), dispositifIr(revenuImposable)]
+        : [dispositifIr(revenuImposable)];
 
-      if (revenuImposable != null && revenuImposable > 0) {
-        const plafondDon = revenuImposable * PLAFOND_IR_REVENU;
-        if (montantDon > plafondDon) {
-          plafondAtteint = true;
-          reductionFiscale = plafondDon * TAUX_REDUCTION_IR;
-          messagePlafond =
-            `Seuls ${formatEuro(plafondDon)} de ce don ouvrent droit à la réduction cette année ` +
-            `(20 % du revenu imposable). L'excédent est reportable sur 5 ans.`;
-        }
-      }
+      const parts = mode === 'don'
+        ? repartirDepuisDon(dispositifs, montant)
+        : repartirDepuisPoche(dispositifs, montant);
 
-      return {
-        montantDon,
-        montantRecuAssociation: montantDon,
-        reductionFiscale,
-        coutReel: montantDon - reductionFiscale,
-        plafondAtteint,
-        messagePlafond,
-      };
-    }
-
-    function calculDonParticulier(montant, revenuImposable, mode) {
-      if (mode === 'don') {
-        return calculParticulierFromDon(montant, revenuImposable);
-      }
-      return calculParticulierFromPoche(montant, revenuImposable);
-    }
-
-    function plafondMecenat(caHT) {
-      if (caHT == null || caHT <= 0) {
-        return PLAFOND_MECENAT_MIN;
-      }
-      return Math.max(PLAFOND_MECENAT_MIN, caHT * PLAFOND_MECENAT_CA);
-    }
-
-    function calculMecenatFromPoche(coutNetPoche, caHT) {
-      if (coutNetPoche == null || coutNetPoche <= 0) {
-        return null;
-      }
-
-      const plafond = plafondMecenat(caHT);
-      const dividendesBruts = coutNetPoche / (1 - TAUX_PFU);
-      let montantDon = dividendesBruts / (1 - TAUX_REDUCTION_IS);
-      let plafondAtteint = false;
-      let messagePlafond = null;
-
-      if (montantDon > plafond) {
-        plafondAtteint = true;
-        montantDon = dividendesBruts + plafond * TAUX_REDUCTION_IS;
-        messagePlafond =
-          `Seuls ${formatEuro(plafond)} du don de l'entreprise ouvrent droit à la réduction cette année ` +
-          `(max(20 000 €, 0,5 % du CA HT)). L'excédent est reportable sur 5 ans.`;
-      }
-
-      const reductionFiscale = plafondAtteint
-        ? plafond * TAUX_REDUCTION_IS
-        : montantDon * TAUX_REDUCTION_IS;
-      const coutSociete = montantDon - reductionFiscale;
-
-      return {
-        montantDon,
-        montantRecuAssociation: montantDon,
-        reductionFiscale,
-        coutSociete,
-        coutPoche: coutSociete * (1 - TAUX_PFU),
-        plafondAtteint,
-        messagePlafond,
-        plafond,
-      };
-    }
-
-    function calculMecenatFromDon(montantDonSaisi, caHT) {
-      if (montantDonSaisi == null || montantDonSaisi <= 0) {
-        return null;
-      }
-
-      const plafond = plafondMecenat(caHT);
-      let plafondAtteint = false;
-      let messagePlafond = null;
-      let reductionFiscale;
-
-      if (montantDonSaisi > plafond) {
-        plafondAtteint = true;
-        reductionFiscale = plafond * TAUX_REDUCTION_IS;
-        messagePlafond =
-          `Seuls ${formatEuro(plafond)} du don de l'entreprise ouvrent droit à la réduction cette année ` +
-          `(max(20 000 €, 0,5 % du CA HT)). L'excédent est reportable sur 5 ans.`;
-      } else {
-        reductionFiscale = montantDonSaisi * TAUX_REDUCTION_IS;
-      }
-
-      const coutSociete = montantDonSaisi - reductionFiscale;
-
-      return {
-        montantDon: montantDonSaisi,
-        montantRecuAssociation: montantDonSaisi,
-        reductionFiscale,
-        coutSociete,
-        coutPoche: coutSociete * (1 - TAUX_PFU),
-        plafondAtteint,
-        messagePlafond,
-        plafond,
-      };
+      return assemblerResultatParticulier(parts, regime);
     }
 
     function calculMecenat(montant, caHT, mode) {
-      if (mode === 'don') {
-        return calculMecenatFromDon(montant, caHT);
+      if (montant == null || montant <= 0) {
+        return null;
       }
-      return calculMecenatFromPoche(montant, caHT);
+
+      const dispositif = dispositifIs(caHT);
+      // En mode poche, on remonte d'abord du net perçu après PFU vers le coût
+      // pour la société (l'équivalent dividendes), puis de ce coût vers le don.
+      const cible = mode === 'don' ? montant : montant / (1 - TAUX_PFU);
+      const [part] = mode === 'don'
+        ? repartirDepuisDon([dispositif], cible)
+        : repartirDepuisPoche([dispositif], cible);
+
+      const coutSociete = part.don - part.reduction;
+      const message = messagePourPart(part);
+
+      return {
+        montantDon: part.don,
+        montantRecuAssociation: part.don,
+        reductionFiscale: part.reduction,
+        coutSociete,
+        coutPoche: coutSociete * (1 - TAUX_PFU),
+        excedent: excedentPour(part),
+        assietteRetenue: Math.min(part.don, dispositif.assietteMax),
+        plafondAtteint: Boolean(message),
+        messagePlafond: message,
+        plafond: dispositif.assietteMax,
+      };
+    }
+
+    function libellePartieIfi(result) {
+      if (result.motifIfi === 'plafond') {
+        return {
+          label: 'Partie IFI (plafond)',
+          note: `Maximum imputable en IFI : ${formatEuro(PLAFOND_IFI_DON)}`,
+        };
+      }
+      if (result.motifIfi === 'ifiDu') {
+        return {
+          label: 'Partie IFI',
+          note: `Réduction limitée à ${formatEuro(result.reductionIfi)} (votre IFI dû)`,
+        };
+      }
+      return { label: 'Partie IFI', note: '' };
     }
 
     function formatPct(rate) {
@@ -675,6 +867,15 @@
         minimumFractionDigits: 0,
         maximumFractionDigits: 1,
       }).format(rate);
+    }
+
+    // Taux toujours affiché, montant effectif entre parenthèses.
+    function labelReduction(label, taux, montant) {
+      return `Réduction ${label} de ${formatPct(taux)} (${formatEuro(montant)})`;
+    }
+
+    function flowDivider(label = 'Détail du calcul') {
+      return `<div class="flow-divider"><span>${label}</span></div>`;
     }
 
     function flowBridgeForward(op) {
@@ -686,6 +887,43 @@
         </div>`;
     }
 
+    function flowConnector() {
+      return `
+        <div class="flow-bridge flow-bridge--line-only" aria-hidden="true">
+          <div class="flow-bridge-line"></div>
+        </div>`;
+    }
+
+    // Insère un trait entre deux cases consécutives. Les ponts (bulles de
+    // réduction) ont déjà leurs propres traits haut/bas : pas de doublon.
+    function assembleFlow(blocks) {
+      const out = [];
+      let prevWasStep = false;
+
+      for (const block of blocks) {
+        if (!block) continue;
+
+        const isStep = block.includes('flow-step');
+        const isDivider = block.includes('flow-divider');
+
+        if (isStep && prevWasStep) {
+          out.push(flowConnector());
+        }
+
+        out.push(block);
+
+        if (isDivider) {
+          prevWasStep = false;
+        } else if (isStep) {
+          prevWasStep = true;
+        } else {
+          prevWasStep = false;
+        }
+      }
+
+      return out.join('');
+    }
+
     function flowStep(label, value, note, variant) {
       return `
         <div class="flow-step flow-step--${variant}">
@@ -695,6 +933,10 @@
         </div>`;
     }
 
+    function stepExcedent(montant, note) {
+      return flowStep('Excédent non réduit', formatEuro(montant), note, 'excess');
+    }
+
     function renderParticulierFlow(result, mode) {
       const container = document.getElementById('particulier-flow');
       if (!result) {
@@ -702,27 +944,66 @@
         return;
       }
 
-      const bridge = flowBridgeForward(
-        result.plafondAtteint
-          ? `Réduction d'impôt : ${formatEuro(result.reductionFiscale)}`
-          : `Réduction d'impôt de ${formatPct(TAUX_REDUCTION_IR)}`
+      const isPoche = mode === 'poche';
+      const isIfi = result.regime === 'ifi';
+      const excedent = result.excedent > EPS ? result.excedent : 0;
+      const noteExcedent = 'Au-delà de 20 % du revenu imposable — aucune réduction cette année, reportable sur 5 ans';
+
+      const stepResult = flowStep(
+        isPoche ? 'Don à effectuer' : 'Votre poche',
+        formatEuro(isPoche ? result.montantDon : result.coutReel),
+        isPoche ? 'Montant total du don' : 'Ce que ça vous coûte réellement',
+        'result'
       );
-      const stepPoche = flowStep(
-        'Votre poche',
-        formatEuro(result.coutReel),
-        'Ce que ça vous coûte réellement',
-        mode === 'poche' ? 'input' : 'result'
-      );
-      const stepDon = flowStep(
-        'Don à effectuer',
-        formatEuro(result.montantDon),
-        '',
-        mode === 'don' ? 'input' : 'result'
+      const stepInput = flowStep(
+        isPoche ? 'Votre poche' : 'Don à effectuer',
+        formatEuro(isPoche ? result.coutReel : result.montantDon),
+        'Montant saisi',
+        'input'
       );
 
-      container.innerHTML = mode === 'poche'
-        ? [stepDon, bridge, stepPoche].join('')
-        : [stepPoche, bridge, stepDon].join('');
+      let detail;
+
+      if (result.panachage) {
+        const ifiPart = libellePartieIfi(result);
+        detail = [
+          flowStep(ifiPart.label, formatEuro(result.donIfi), ifiPart.note, 'middle'),
+          flowBridgeForward(
+            labelReduction('IFI', TAUX_REDUCTION_IFI, result.reductionIfi)
+          ),
+          flowStep(
+            excedent ? 'Partie IR (dans le plafond)' : 'Partie IR (reliquat)',
+            formatEuro(excedent ? result.assietteIr : result.donIr),
+            excedent
+              ? 'Plafonnée à 20 % du revenu imposable'
+              : 'Ce qu\'il reste à imputer sur l\'impôt sur le revenu',
+            'middle'
+          ),
+          flowBridgeForward(
+            labelReduction('IR', TAUX_REDUCTION_IR, result.reductionIr)
+          ),
+          excedent ? stepExcedent(excedent, noteExcedent) : null,
+        ].filter(Boolean);
+      } else {
+        const taux = isIfi ? TAUX_REDUCTION_IFI : TAUX_REDUCTION_IR;
+        const bridgeLabel = isIfi ? 'IFI' : 'IR';
+        detail = [
+          flowBridgeForward(
+            labelReduction(bridgeLabel, taux, result.reductionFiscale)
+          ),
+          excedent
+            ? flowStep(
+              'Dans le plafond',
+              formatEuro(result.assietteIr),
+              `Seule cette part ouvre droit à la réduction de ${formatPct(taux)}`,
+              'middle'
+            )
+            : null,
+          excedent ? stepExcedent(excedent, noteExcedent) : null,
+        ].filter(Boolean);
+      }
+
+      container.innerHTML = assembleFlow([stepResult, flowDivider(), ...detail, stepInput]);
     }
 
     function renderMecenatFlow(result, mode) {
@@ -732,21 +1013,28 @@
         return;
       }
 
+      const isPoche = mode === 'poche';
+      const excedent = result.excedent > EPS ? result.excedent : 0;
+
+      const stepResult = flowStep(
+        isPoche ? 'Don de l\'entreprise' : 'Votre poche',
+        formatEuro(isPoche ? result.montantDon : result.coutPoche),
+        isPoche ? 'Montant total du don' : 'Net après réduction d\'impôt et PFU',
+        'result'
+      );
+      const stepInput = flowStep(
+        isPoche ? 'Votre poche' : 'Don de l\'entreprise',
+        formatEuro(isPoche ? result.coutPoche : result.montantDon),
+        'Montant saisi',
+        'input'
+      );
       const bridgePfu = flowBridgeForward(
-        mode === 'poche'
+        isPoche
           ? `PFU de ${formatPct(TAUX_PFU)}`
           : `Équivalent brut avant PFU (${formatPct(TAUX_PFU)})`
       );
       const bridgeIs = flowBridgeForward(
-        result.plafondAtteint
-          ? `Réduction d'IS pour l'entreprise : ${formatEuro(result.reductionFiscale)}`
-          : `L'entreprise récupère ${formatPct(TAUX_REDUCTION_IS)} en réduction d'IS`
-      );
-      const stepPoche = flowStep(
-        'Votre poche',
-        formatEuro(result.coutPoche),
-        'Net après réduction d\'impôt et PFU — ce que ce don vous coûte réellement',
-        mode === 'poche' ? 'input' : 'result'
+        labelReduction('d\'IS', TAUX_REDUCTION_IS, result.reductionFiscale)
       );
       const stepDiv = flowStep(
         'Équivalent dividendes',
@@ -754,16 +1042,26 @@
         'Ce que l\'entreprise aurait pu vous verser à la place du don',
         'middle'
       );
-      const stepDon = flowStep(
-        'Don de l\'entreprise',
-        formatEuro(result.montantDon),
-        '',
-        mode === 'don' ? 'input' : 'result'
-      );
+      const stepPlafond = excedent
+        ? flowStep(
+          'Dans le plafond',
+          formatEuro(result.assietteRetenue),
+          `max(20 000 €, 0,5 % du CA HT) — réduction de ${formatPct(TAUX_REDUCTION_IS)}`,
+          'middle'
+        )
+        : null;
+      const stepExc = excedent
+        ? stepExcedent(
+          excedent,
+          'Au-delà du plafond de mécénat — aucune réduction cette année, reportable sur 5 ans'
+        )
+        : null;
 
-      container.innerHTML = mode === 'poche'
-        ? [stepDon, bridgeIs, stepDiv, bridgePfu, stepPoche].join('')
-        : [stepPoche, bridgePfu, stepDiv, bridgeIs, stepDon].join('');
+      const detail = isPoche
+        ? [stepPlafond, bridgeIs, stepExc, stepDiv, bridgePfu].filter(Boolean)
+        : [bridgePfu, stepDiv, bridgeIs, stepExc, stepPlafond].filter(Boolean);
+
+      container.innerHTML = assembleFlow([stepResult, flowDivider(), ...detail, stepInput]);
     }
 
     function updateModeLabels(panel, mode) {
@@ -782,6 +1080,24 @@
           hintEl.textContent = '';
           hintEl.hidden = true;
         }
+      }
+    }
+
+    function isRedevableIfi() {
+      return document.getElementById('particulier-redevable-ifi').checked;
+    }
+
+    function updateIfiFields() {
+      const isIfi = isRedevableIfi();
+      document.getElementById('particulier-ifi-field').classList.toggle('hidden', !isIfi);
+
+      const revenuLabel = document.getElementById('particulier-revenu-label');
+      if (isIfi) {
+        revenuLabel.innerHTML =
+          'Revenu imposable annuel <span class="optional">(plafond IR sur le solde du don)</span>';
+      } else {
+        revenuLabel.innerHTML =
+          'Revenu imposable annuel <span class="optional">(optionnel, pour le plafond)</span>';
       }
     }
 
@@ -819,7 +1135,14 @@
     function updateParticulier() {
       const montant = parseInput(document.getElementById('particulier-montant').value);
       const revenu = parseInput(document.getElementById('particulier-revenu').value);
-      const result = calculDonParticulier(montant, revenu, modeParticulier.current);
+      const ifiDu = parseInput(document.getElementById('particulier-ifi').value);
+      const result = calculDonParticulier(
+        montant,
+        revenu,
+        ifiDu,
+        modeParticulier.current,
+        isRedevableIfi() ? 'ifi' : 'ir'
+      );
 
       renderParticulierFlow(result, modeParticulier.current);
       setAlert('particulier-alert', result ? result.messagePlafond : null);
@@ -866,8 +1189,14 @@
     }
 
     function initInputs() {
-      ['particulier-montant', 'particulier-revenu'].forEach((id) => {
+      ['particulier-montant', 'particulier-revenu', 'particulier-ifi'].forEach((id) => {
         document.getElementById(id).addEventListener('input', updateParticulier);
+      });
+
+      const ifiCheckbox = document.getElementById('particulier-redevable-ifi');
+      ifiCheckbox.addEventListener('change', () => {
+        updateIfiFields();
+        updateParticulier();
       });
 
       ['mecenat-montant', 'mecenat-ca'].forEach((id) => {
@@ -881,6 +1210,7 @@
       initTabs();
       initModeToggles();
       initInputs();
+      updateIfiFields();
       updateModeLabels('particulier', modeParticulier.current);
       updateModeLabels('mecenat', modeMecenat.current);
       updateParticulier();
